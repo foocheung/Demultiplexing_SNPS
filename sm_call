@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+snakemake  -j 50  --cluster-config /hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/cluster_config_threaded.json --cluster "qsub -terse -l quick,avx2,mem_free={cluster.mem_free},h_vmem={cluster.h_vmem} {cluster.parallel_opts}" -s /hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/Snakefile_hpc
+

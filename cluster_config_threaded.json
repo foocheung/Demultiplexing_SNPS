@@ -1,0 +1,32 @@
+{
+    "__default__" :
+    {
+        "mem_free" : "40G",
+        "h_vmem" : "40G",
+        "parallel_opts" : "-pe threaded 2"
+
+    },
+    "pass1" :
+    {
+        "mem_free" : "40G",
+        "h_vmem" : "40G",
+        "parallel_opts" : "-pe threaded 2"
+
+    },
+ "sort" :
+    {
+        "mem_free" : "40G",
+        "h_vmem" : "40G",
+        "parallel_opts" : "-pe threaded 2"
+
+    },
+"mpileup" :
+    {
+        "mem_free" : "100G",
+        "h_vmem" : "100G",
+        "parallel_opts" : "-pe threaded 1"
+
+    }
+
+}
+
