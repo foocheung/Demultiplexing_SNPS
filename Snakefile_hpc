@@ -2,15 +2,19 @@ from os import listdir
 import glob
 import os
 
+# Define the Conda environment
+#conda: "/hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/environment.yml"
+
 configfile: "/hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/config.yaml"
 #prin://cdn.sstatic.net/Img/teams/teams-illo-free-sidebar-promo.svg?v=47faa659a05et (config['samples'])
 #SAMPLES = set(samples)
-print (config['samples'])
+#print (config['samples'])
 
 
 
 rule all:
     input:
+        "star.log",
         expand("outdir/{sample}_output/Aligned.sortedByCoord.out.bam", sample = config['samples']),
 	expand("outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort", sample = config['samples']),
 	expand("outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort.fixmate", sample = config['samples']),
@@ -20,21 +24,29 @@ rule all:
         "ALIGN/hg19_snp15_markdup_rmi_v2.vcf",
         "ALIGN/out.txt.relatedness2",
         "ALIGN/out.pdf" 
+
+rule a_conda_rule:
+    output: "star.log" 
+    conda: "/hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/environment.yml"
+    shell:
+        "which STAR > star.log"
+
 rule pass1:
         input:
             R1L1 = '/hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/{sample}_R1_001.fastq.gz', # may need adjustment if your fastq file name format is different
             R2L1 = '/hpcdata/chi/PROJECTS_Archive/2022_CHI_PROPOSALS/RAMASWAMI_KSHV_CHI-209/REPORTS/Manthiram_SEQ/{sample}_R2_001.fastq.gz',
-            refdir = directory('/hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/hg19/CURRENT')
+            refdir = ('/hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/hg19/CURRENT')
         params:
             outdir = 'outdir/{sample}_output'
         output:
             "outdir/{sample}_output/Aligned.sortedByCoord.out.bam"
         threads: 1 # set the maximum number of available cores
+	conda: "environment.yml"
         shell:
             'rm -rf {params.outdir} &&' # be careful with this. I don't know why, but Snakemake had problems without this cleaning.
             'mkdir {params.outdir} && ' # snakemake had problems finding output files with --outFileNamePrefix, so I used this approach instead
             'cd {params.outdir} && '
-            '/sysapps/cluster/software/STAR/2.7.3a-goolf-1.7.20/bin/STAR --runThreadN {threads} '
+            'STAR --runThreadN {threads} '
             '--genomeDir {input.refdir} '
             '--readFilesIn {input.R1L1} {input.R2L1} '
             '--readFilesCommand zcat '
@@ -50,7 +62,7 @@ rule sort:
              outdir = 'outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort'
         threads:1  # set the maximum number of available cores
         shell:
-            '/sysapps/cluster/software/SAMtools/1.9-goolf-1.7.20/bin/samtools  sort -@ 6 -n {input.sortbam} -o  {output.outdir}'
+            'samtools  sort -@ 6 -n {input.sortbam} -o  {output.outdir}'
 
 rule fixmate:
         input:
@@ -61,7 +73,7 @@ rule fixmate:
              outdir = 'outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort.fixmate'
         threads:1  # set the maximum number of available cores
         shell:
-            '/sysapps/cluster/software/SAMtools/1.9-goolf-1.7.20/bin/samtools  fixmate -@ 6 -m {input.fixmate} {output.outdir}'
+            'samtools  fixmate -@ 6 -m {input.fixmate} {output.outdir}'
 
 rule sort2:
         input:
@@ -72,7 +84,7 @@ rule sort2:
              outdir = 'outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort.fixmate.sort'
         threads:1  # set the maximum number of available cores
         shell:
-            '/sysapps/cluster/software/SAMtools/1.9-goolf-1.7.20/bin/samtools  sort -@ 6 {input.sortbam2} -o  {output.outdir}'
+            'samtools  sort -@ 6 {input.sortbam2} -o  {output.outdir}'
 
 
 rule markdup:
@@ -84,7 +96,7 @@ rule markdup:
              outdir = 'outdir/{sample}_output/Aligned.sortedByCoord.out.bam.sort.fixmate.sort.markdup'
         threads:1  # set the maximum number of available cores
         shell:
-            '/sysapps/cluster/software/SAMtools/1.9-goolf-1.7.20/bin/samtools  markdup -@ 6 -r {input.sortfixmate}  {output.outdir}'
+            'samtools  markdup -@ 6 -r {input.sortfixmate}  {output.outdir}'
 
 rule mpileup:
         input:
@@ -95,7 +107,7 @@ rule mpileup:
              outdir = 'ALIGN/hg19_snp15_markdup_rmi_v2.bcf'
         threads:1  # set the maximum number of available cores
         shell:
-            '/sysapps/cluster/software/SAMtools/1.9-goolf-1.7.20/bin/samtools mpileup -A -q 4 -t AD,DP -l /hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/SNP_DB/SNP_DB.bed_minuschr.bed  -f /hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/hg19/Genome.fa  -g {input.allsortfixmate} | /sysapps/cluster/software/BCFtools/1.9-goolf-1.7.20/bin/bcftools call -m  -O b -f GQ > ALIGN/hg19_snp15_markdup_rmi_v2.bcf'
+            'samtools mpileup -A -q 4 -t AD,DP -l /hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/SNP_DB/SNP_DB.bed_minuschr.bed  -f /hpcdata/sg/sg_data/CHI/PROJECTS/COVID/KINSHIP/hg19/Genome.fa  -g {input.allsortfixmate} | bcftools call -m  -O b -f GQ > ALIGN/hg19_snp15_markdup_rmi_v2.bcf'
 
 #bcftools convert v2CVPYR2.bcf v2CVPYR2.vcf
 rule convert:
@@ -104,7 +116,7 @@ rule convert:
         output:
             outdir = 'ALIGN/hg19_snp15_markdup_rmi_v2.vcf'
         shell:
-            '/sysapps/cluster/software/BCFtools/1.9-goolf-1.7.20/bin/bcftools convert ALIGN/hg19_snp15_markdup_rmi_v2.bcf >  ALIGN/hg19_snp15_markdup_rmi_v2.vcf'
+            'bcftools convert ALIGN/hg19_snp15_markdup_rmi_v2.bcf >  ALIGN/hg19_snp15_markdup_rmi_v2.vcf'
 
 #vcftools v2CVPYR2.vcf relatedness_out.txt
 rule relatedness:
@@ -113,7 +125,7 @@ rule relatedness:
         output:
             outdir = 'ALIGN/out.txt.relatedness2'
         shell:
-            '/sysapps/cluster/software/VCFtools/0.1.15-goolf-1.7.20-Perl-5.22.2/bin/vcftools --vcf ALIGN/hg19_snp15_markdup_rmi_v2.vcf --out ALIGN/out.txt --relatedness2'
+            'vcftools --vcf ALIGN/hg19_snp15_markdup_rmi_v2.vcf --out ALIGN/out.txt --relatedness2'
 
 #heatmap Rscript ./heatmap_related.R ./ALIGN/out.txt.relatedness2 ./ALIGN/out.pdf
 rule heatmap:
@@ -122,4 +134,4 @@ rule heatmap:
         output:
             outdir = 'ALIGN/out.pdf'
         shell:
-            '/sysapps/cluster/software/Anaconda3/2022.05/envs/R-4.2.1/bin/Rscript ./heatmap_related.R ./ALIGN/out.txt.relatedness2 ./ALIGN/out.pdf'
+            'Rscript ./heatmap_related.R ./ALIGN/out.txt.relatedness2 ./ALIGN/out.pdf'

@@ -1,3 +1,10 @@
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+
+packages <- c("ggplot2", "reshape", "tidyverse")
+
+install.packages(setdiff(packages, rownames(installed.packages())))  
+
+
 library(ggplot2)
 library(reshape2)
 library(tidyverse)
